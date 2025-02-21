@@ -1,0 +1,122 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f4f4f4;
+}
+
+.container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #333;
+}
+
+.btn {
+    padding: 10px 20px;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn:hover {
+    background-color: #357abd;
+}
+
+.player-section {
+    margin: 2rem 0;
+    text-align: center;
+}
+
+#audioPlayer {
+    width: 100%;
+    margin: 1rem 0;
+}
+
+.rating-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.rating-btn {
+    padding: 10px 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.rating-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.file-info {
+    margin: 1rem 0;
+    text-align: center;
+}
+
+.results-section {
+    margin-top: 2rem;
+}
+
+#resultsList {
+    list-style: none;
+    margin-top: 1rem;
+}
+
+#resultsList li {
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.comparison-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.audio-choice {
+    flex: 1;
+    text-align: center;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.audio-choice audio {
+    width: 100%;
+    margin: 1rem 0;
+}
+
+.choice-btn {
+    padding: 10px 20px;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.choice-btn:hover {
+    background-color: #357abd;
+}

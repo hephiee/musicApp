@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MP3 Evaluator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>MP3 File Evaluator</h1>
+        
+        <div class="google-auth-section">
+            <button id="authorizeButton" class="btn">Connect to Google Drive</button>
+        </div>
+
+        <div class="player-section" style="display: none;">
+            <audio id="audioPlayer" controls></audio>
+            <div class="rating-controls">
+                <button class="rating-btn" data-rating="1">1⭐</button>
+                <button class="rating-btn" data-rating="2">2⭐</button>
+                <button class="rating-btn" data-rating="3">3⭐</button>
+                <button class="rating-btn" data-rating="4">4⭐</button>
+                <button class="rating-btn" data-rating="5">5⭐</button>
+            </div>
+            <div class="file-info">
+                <p>Current File: <span id="currentFile">None</span></p>
+                <p>Files Rated: <span id="filesRated">0</span>/<span id="totalFiles">0</span></p>
+            </div>
+        </div>
+
+        <div class="results-section" style="display: none;">
+            <h2>Top Rated Files</h2>
+            <ul id="resultsList"></ul>
+        </div>
+    </div>
+
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
