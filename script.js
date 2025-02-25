@@ -1,15 +1,13 @@
-// Google Drive API configuration
-const CLIENT_ID = 'YOUR_CLIENT_ID';
-const API_KEY = 'YOUR_API_KEY';
-const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
-const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
+const supabase = supabaseJs.createClient(
+    'YOUR_SUPABASE_URL',
+    'YOUR_SUPABASE_ANON_KEY'
+)
 
 let mp3Files = [];
 let currentFileIndex = 0;
 let ratings = {};
 
 // Add these new constants
-const FOLDER_ID = 'YOUR_FOLDER_ID'; // Add your Google Drive folder ID here
 let currentPair = [];
 let roundRobinResults = {};
 
@@ -166,4 +164,102 @@ function showResults() {
         li.textContent = `${file.name} - Win rate: ${winPercentage}% (${result.wins}/${result.total})`;
         resultsList.appendChild(li);
     });
+}
+
+// Record a new vote
+async function recordVote(winnerUrl, loserUrl) {
+    // Add the vote
+    const { error: voteError } = await supabase
+        .from('votes')
+        .insert([{ 
+            winner_video_url: winnerUrl, 
+            loser_video_url: loserUrl 
+        }]);
+
+    // Update the summary for winner
+    const { error: winnerError } = await supabase
+        .from('results_summary')
+        .upsert({ 
+            video_url: winnerUrl,
+            wins: supabase.raw('wins + 1'),
+            total_matches: supabase.raw('total_matches + 1'),
+            last_updated: new Date()
+        });
+
+    // Update the summary for loser
+    const { error: loserError } = await supabase
+        .from('results_summary')
+        .upsert({ 
+            video_url: loserUrl,
+            total_matches: supabase.raw('total_matches + 1'),
+            last_updated: new Date()
+        });
+
+    if (voteError || winnerError || loserError) {
+        console.error('Error recording vote:', voteError || winnerError || loserError);
+    }
+}
+
+// Get current results
+async function getResults() {
+    const { data, error } = await supabase
+        .from('results_summary')
+        .select('*')
+        .order('wins', { ascending: false });
+    
+    if (error) {
+        console.error('Error fetching results:', error);
+        return [];
+    }
+    
+    return data;
+}
+
+// Test function to check if database is connected and working
+async function testDatabaseConnection() {
+    try {
+        // Try to add a test video result
+        const testData = {
+            video_url: "test_url",
+            title: "Test Video",
+        };
+
+        const { data, error } = await supabase
+            .from('results_summary')
+            .upsert(testData);
+
+        if (error) {
+            console.error("Database test failed:", error);
+            return false;
+        }
+
+        console.log("Database connection successful!");
+        return true;
+    } catch (e) {
+        console.error("Database test failed:", e);
+        return false;
+    }
+}
+
+// Test function to record a sample vote
+async function testRecordVote() {
+    try {
+        await recordVote(
+            "test_video_1", 
+            "test_video_2"
+        );
+        console.log("Test vote recorded successfully!");
+        
+        // Get and display results
+        const results = await getResults();
+        console.log("Current results:", results);
+    } catch (e) {
+        console.error("Test vote failed:", e);
+    }
+}
+
+// Run tests when page loads
+window.onload = async function() {
+    await testDatabaseConnection();
+    await testRecordVote();
 }
