@@ -1,6 +1,6 @@
 const supabase = supabaseJs.createClient(
-    'YOUR_SUPABASE_URL',
-    'YOUR_SUPABASE_ANON_KEY'
+    'https://xtwamtfxirypcxszldow.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0d2FtdGZ4aXJ5cGN4c3psZG93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk2NzI0NzAsImV4cCI6MjAyNTI0ODQ3MH0.Wd-HYoFHHgPGHJGQXwqRPQYGBFZBGZGXgQkJJZQZGZE'
 )
 
 let mp3Files = [];
@@ -218,7 +218,6 @@ async function getResults() {
 // Test function to check if database is connected and working
 async function testDatabaseConnection() {
     try {
-        // Try to add a test video result
         const testData = {
             video_url: "test_url",
             title: "Test Video",
