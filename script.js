@@ -1,264 +1,126 @@
-const supabase = supabaseJs.createClient(
+console.log('Script starting...');
+
+// Supabase client
+const supabaseClient = supabase.createClient(
     'https://xtwamtfxirypcxszldow.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0d2FtdGZ4aXJ5cGN4c3psZG93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk2NzI0NzAsImV4cCI6MjAyNTI0ODQ3MH0.Wd-HYoFHHgPGHJGQXwqRPQYGBFZBGZGXgQkJJZQZGZE'
-)
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0d2FtdGZ4aXJ5cGN4c3psZG93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA0NTIwMzQsImV4cCI6MjA1NjAyODAzNH0.ZZRtoHPlie0FN5IAF1WVd4sRqWOWH_ZfP149Gorit1c'
+);
 
-let mp3Files = [];
-let currentFileIndex = 0;
-let ratings = {};
-
-// Add these new constants
-let currentPair = [];
-let roundRobinResults = {};
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Load the Google API client
-    gapi.load('client:auth2', initClient);
-});
-
-function initClient() {
-    gapi.client.init({
-        apiKey: API_KEY,
-        clientId: CLIENT_ID,
-        discoveryDocs: DISCOVERY_DOCS,
-        scope: SCOPES
-    }).then(() => {
-        // Listen for sign-in state changes
-        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-        
-        // Handle the initial sign-in state
-        updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-        
-        document.getElementById('authorizeButton').onclick = handleAuthClick;
-    });
+// Show message function
+function showMessage(type, message) {
+    const element = document.getElementById(`${type}Message`);
+    element.textContent = message;
+    element.classList.remove('hidden');
+    element.classList.add('show');
+    setTimeout(() => {
+        element.classList.remove('show');
+        element.classList.add('hidden');
+    }, 3000);
 }
 
-function updateSigninStatus(isSignedIn) {
-    if (isSignedIn) {
-        document.querySelector('.google-auth-section').style.display = 'none';
-        document.querySelector('.player-section').style.display = 'block';
-        listMP3Files();
-    }
+function showErrorWindow(type, message) {
+    const errorWindow = document.getElementById(`${type}ErrorWindow`);
+    errorWindow.classList.remove('hidden');
+    
+    // Add click handler to close button
+    const closeButton = errorWindow.querySelector('.error-close');
+    closeButton.onclick = () => {
+        errorWindow.classList.add('hidden');
+    };
 }
 
-function handleAuthClick() {
-    gapi.auth2.getAuthInstance().signIn();
-}
+// Function to create account
+async function handleSignup() {
+    const username = document.getElementById('signupUsername').value;
+    const password = document.getElementById('signupPassword').value;
 
-async function listMP3Files() {
-    try {
-        const response = await gapi.client.drive.files.list({
-            q: `'${FOLDER_ID}' in parents and mimeType contains 'audio/mp3'`,
-            fields: 'files(id, name, webContentLink)'
-        });
-
-        mp3Files = response.result.files;
-        // Initialize round-robin scoring
-        mp3Files.forEach(file => {
-            roundRobinResults[file.id] = {
-                wins: 0,
-                total: 0
-            };
-        });
-        
-        document.getElementById('totalFiles').textContent = 
-            `${mp3Files.length * (mp3Files.length - 1) / 2}`; // Total number of comparisons
-        
-        if (mp3Files.length > 0) {
-            loadNextPair();
-        }
-    } catch (error) {
-        console.error('Error listing files:', error);
-    }
-}
-
-function loadNextPair() {
-    if (currentFileIndex >= mp3Files.length * (mp3Files.length - 1) / 2) {
-        showResults();
+    if (!username || !password) {
+        showMessage('signupError', 'Please enter both username and password');
         return;
     }
 
-    // Calculate the next pair of indices
-    let n = mp3Files.length;
-    let k = currentFileIndex;
-    let i = 0;
-    let j = 1;
-    
-    // Find the next pair that hasn't been compared
-    while (k >= (n - i)) {
-        k -= (n - i);
-        i++;
-        j = i + 1;
-    }
-    j += k;
-
-    currentPair = [mp3Files[i], mp3Files[j]];
-    
-    // Update the UI to show both files
-    document.getElementById('currentFile').textContent = 
-        `Comparing: ${currentPair[0].name} vs ${currentPair[1].name}`;
-    
-    // Set up audio players for both files
-    setupAudioPlayers(currentPair);
-}
-
-function setupAudioPlayers(pair) {
-    const playerSection = document.querySelector('.player-section');
-    playerSection.innerHTML = `
-        <div class="comparison-container">
-            <div class="audio-choice">
-                <p>Option A: ${pair[0].name}</p>
-                <audio controls src="${pair[0].webContentLink}"></audio>
-                <button class="choice-btn" data-index="0">Choose A</button>
-            </div>
-            <div class="audio-choice">
-                <p>Option B: ${pair[1].name}</p>
-                <audio controls src="${pair[1].webContentLink}"></audio>
-                <button class="choice-btn" data-index="1">Choose B</button>
-            </div>
-        </div>
-        <p>Progress: <span id="filesRated">0</span>/<span id="totalFiles">0</span></p>
-    `;
-
-    // Set up choice buttons
-    document.querySelectorAll('.choice-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            const winnerIndex = parseInt(button.dataset.index);
-            recordResult(winnerIndex);
-        });
-    });
-}
-
-function recordResult(winnerIndex) {
-    const winner = currentPair[winnerIndex];
-    const loser = currentPair[1 - winnerIndex];
-    
-    roundRobinResults[winner.id].wins++;
-    roundRobinResults[winner.id].total++;
-    roundRobinResults[loser.id].total++;
-    
-    currentFileIndex++;
-    document.getElementById('filesRated').textContent = currentFileIndex;
-    
-    loadNextPair();
-}
-
-function showResults() {
-    document.querySelector('.player-section').style.display = 'none';
-    document.querySelector('.results-section').style.display = 'block';
-    
-    // Sort files by win percentage
-    const sortedFiles = mp3Files.sort((a, b) => {
-        const aScore = roundRobinResults[a.id].wins / roundRobinResults[a.id].total;
-        const bScore = roundRobinResults[b.id].wins / roundRobinResults[b.id].total;
-        return bScore - aScore;
-    });
-    
-    const resultsList = document.getElementById('resultsList');
-    resultsList.innerHTML = '';
-    
-    sortedFiles.forEach(file => {
-        const result = roundRobinResults[file.id];
-        const winPercentage = ((result.wins / result.total) * 100).toFixed(1);
-        const li = document.createElement('li');
-        li.textContent = `${file.name} - Win rate: ${winPercentage}% (${result.wins}/${result.total})`;
-        resultsList.appendChild(li);
-    });
-}
-
-// Record a new vote
-async function recordVote(winnerUrl, loserUrl) {
-    // Add the vote
-    const { error: voteError } = await supabase
-        .from('votes')
-        .insert([{ 
-            winner_video_url: winnerUrl, 
-            loser_video_url: loserUrl 
-        }]);
-
-    // Update the summary for winner
-    const { error: winnerError } = await supabase
-        .from('results_summary')
-        .upsert({ 
-            video_url: winnerUrl,
-            wins: supabase.raw('wins + 1'),
-            total_matches: supabase.raw('total_matches + 1'),
-            last_updated: new Date()
-        });
-
-    // Update the summary for loser
-    const { error: loserError } = await supabase
-        .from('results_summary')
-        .upsert({ 
-            video_url: loserUrl,
-            total_matches: supabase.raw('total_matches + 1'),
-            last_updated: new Date()
-        });
-
-    if (voteError || winnerError || loserError) {
-        console.error('Error recording vote:', voteError || winnerError || loserError);
-    }
-}
-
-// Get current results
-async function getResults() {
-    const { data, error } = await supabase
-        .from('results_summary')
-        .select('*')
-        .order('wins', { ascending: false });
-    
-    if (error) {
-        console.error('Error fetching results:', error);
-        return [];
-    }
-    
-    return data;
-}
-
-// Test function to check if database is connected and working
-async function testDatabaseConnection() {
     try {
-        const testData = {
-            video_url: "test_url",
-            title: "Test Video",
-        };
-
-        const { data, error } = await supabase
-            .from('results_summary')
-            .upsert(testData);
+        const { data, error } = await supabaseClient
+            .from('users')
+            .insert([{ 
+                username: username,
+                password: password
+            }]);
 
         if (error) {
-            console.error("Database test failed:", error);
-            return false;
+            if (error.code === '23505') {  // Unique constraint violation
+                showErrorWindow('signup');  // Show the error window
+            } else {
+                showMessage('signupError', 'Error creating account: ' + error.message);
+            }
+            return;
         }
 
-        console.log("Database connection successful!");
-        return true;
-    } catch (e) {
-        console.error("Database test failed:", e);
-        return false;
+        showMessage('signupSuccess', 'Account created successfully!');
+        document.getElementById('signupUsername').value = '';
+        document.getElementById('signupPassword').value = '';
+    } catch (error) {
+        console.error('Error:', error);
+        showMessage('signupError', 'Error creating account');
     }
 }
 
-// Test function to record a sample vote
-async function testRecordVote() {
+// Function to login
+async function handleLogin() {
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+
+    if (!username || !password) {
+        showMessage('loginError', 'Please enter both username and password');
+        return;
+    }
+
     try {
-        await recordVote(
-            "test_video_1", 
-            "test_video_2"
-        );
-        console.log("Test vote recorded successfully!");
-        
-        // Get and display results
-        const results = await getResults();
-        console.log("Current results:", results);
-    } catch (e) {
-        console.error("Test vote failed:", e);
+        const { data, error } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('username', username)
+            .eq('password', password)
+            .single();
+
+        if (error || !data) {
+            showErrorWindow('login');  // Show the error window
+            return;
+        }
+
+        // Successful login animation
+        document.getElementById('loginSection').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('contentSection').classList.remove('hidden');
+            document.getElementById('contentSection').style.opacity = '1';
+            document.getElementById('currentUser').textContent = username;
+        }, 500);
+
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+    } catch (error) {
+        console.error('Error:', error);
+        showMessage('loginError', 'Error during login');
     }
 }
 
-// Run tests when page loads
-window.onload = async function() {
-    await testDatabaseConnection();
-    await testRecordVote();
-}
+// Add event listeners when page loads
+window.onload = function() {
+    console.log('Page loaded, adding event listeners');
+    document.getElementById('loginButton').addEventListener('click', handleLogin);
+    document.getElementById('signupButton').addEventListener('click', handleSignup);
+    
+    // Add input animations
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('focus', () => {
+            input.parentElement.classList.add('focused');
+        });
+        input.addEventListener('blur', () => {
+            if (!input.value) {
+                input.parentElement.classList.remove('focused');
+            }
+        });
+    });
+};
