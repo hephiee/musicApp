@@ -84,10 +84,14 @@ async function handleLogin() {
             .single();
 
         if (error || !data) {
-            showErrorWindow('login');  // Show the error window
+            showErrorWindow('login');
             return;
         }
 
+        // Store user session data
+        localStorage.setItem('musicUserLoggedIn', 'true');
+        localStorage.setItem('musicUsername', username);
+        
         // Successful login animation
         document.getElementById('loginSection').style.opacity = '0';
         setTimeout(() => {
@@ -95,6 +99,9 @@ async function handleLogin() {
             document.getElementById('contentSection').classList.remove('hidden');
             document.getElementById('contentSection').style.opacity = '1';
             document.getElementById('currentUser').textContent = username;
+            
+            // Redirect after animations (you can change this URL)
+            window.location.href = '/dashboard.html';
         }, 500);
 
         document.getElementById('loginUsername').value = '';
